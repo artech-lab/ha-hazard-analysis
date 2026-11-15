@@ -1,0 +1,160 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configura un monitor dei rischi",
+        "description": "Scegli le telecamere dell'area e l'entità AI Task che le analizzerà. Al resto pensa l'integrazione: analizza le immagini con una cadenza dinamica, valuta cinque categorie di rischio da 0 a 4 e invia un avviso quando il rischio è alto. Con un fornitore AI cloud le immagini delle telecamere escono dalla tua rete.",
+        "data": {
+          "name": "Nome",
+          "cameras": "Telecamere",
+          "ai_task_entity": "Entità AI Task",
+          "occupancy_entity": "Sensore di presenza (facoltativo)",
+          "area_description": "Descrizione dell'area (facoltativa)"
+        },
+        "data_description": {
+          "name": "Usato per il dispositivo e come prefisso degli ID delle entità.",
+          "cameras": "Da una a quattro inquadrature della stessa area, analizzate insieme.",
+          "ai_task_entity": "Un'entità AI Task che accetta immagini (Ollama, OpenAI, Google Gemini, Anthropic…), configurata nella sua integrazione.",
+          "occupancy_entity": "Quando si attiva parte un'analisi in più; finché è attiva vale la cadenza più rapida.",
+          "area_description": "Una frase di contesto per l'AI, ad esempio: laboratorio di elettronica con stazioni di saldatura e una stampante 3D."
+        }
+      }
+    },
+    "error": {
+      "camera_count": "Seleziona da una a quattro telecamere."
+    },
+    "abort": {
+      "no_ai_task": "Non è stata trovata un'entità AI Task che accetti immagini. Configura un'integrazione AI che la fornisca (ad esempio Ollama, OpenAI, Google Gemini o Anthropic), poi aggiungi di nuovo Hazard Analysis."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni del monitor dei rischi",
+        "data": {
+          "cameras": "Telecamere",
+          "ai_task_entity": "Entità AI Task",
+          "fallback_ai_task_entity": "Entità AI Task di riserva (facoltativa)",
+          "occupancy_entity": "Sensore di presenza (facoltativo)",
+          "workday_entity": "Entità orario di lavoro (facoltativa)",
+          "environment_sensors": "Sensori ambientali (facoltativi)",
+          "area_description": "Descrizione dell'area (facoltativa)",
+          "notify_services": "Servizi di notifica push (facoltativi)",
+          "save_evidence": "Salva le istantanee di evidenza"
+        },
+        "data_description": {
+          "cameras": "Da una a quattro inquadrature della stessa area, analizzate insieme.",
+          "ai_task_entity": "Un'entità AI Task che accetta immagini (Ollama, OpenAI, Google Gemini, Anthropic…), configurata nella sua integrazione.",
+          "fallback_ai_task_entity": "Usata quando il motore principale non è disponibile, va in errore o non risponde entro 3 minuti.",
+          "occupancy_entity": "Quando si attiva parte un'analisi in più; finché è attiva vale la cadenza più rapida.",
+          "workday_entity": "Finché è attiva (ad es. il sensore Giorno lavorativo o una programmazione) vale la cadenza più rapida.",
+          "environment_sensors": "Sensori di particolato, CO2, temperatura, fumo o perdite dell'area: passati all'AI come conferma.",
+          "area_description": "Una frase di contesto per l'AI, ad esempio: laboratorio di elettronica con stazioni di saldatura e una stampante 3D.",
+          "notify_services": "Oltre alla notifica persistente, invia gli avvisi a questi servizi di notifica (ad esempio mobile_app_telefono).",
+          "save_evidence": "Con una lettura alta o critica salva un'istantanea di ogni telecamera nella cartella Media hazard_analysis (conservate 30 giorni)."
+        }
+      }
+    },
+    "error": {
+      "camera_count": "Seleziona da una a quattro telecamere.",
+      "same_engine": "Scegli un'entità diversa da quella principale."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "hazard": {
+        "name": "Pericolo"
+      },
+      "analyzing": {
+        "name": "Analisi in corso"
+      },
+      "deescalation_pending": {
+        "name": "Rientro in attesa di conferma"
+      },
+      "problem": {
+        "name": "Problema di analisi",
+        "state_attributes": {
+          "last_error": {
+            "name": "Ultimo errore"
+          },
+          "last_attempt": {
+            "name": "Ultimo tentativo"
+          }
+        }
+      }
+    },
+    "button": {
+      "analyze_now": {
+        "name": "Analizza ora"
+      }
+    },
+    "sensor": {
+      "risk_level": {
+        "name": "Livello di rischio",
+        "state": {
+          "none": "Nessuno",
+          "low": "Basso",
+          "medium": "Moderato",
+          "high": "Alto",
+          "critical": "Critico"
+        },
+        "state_attributes": {
+          "level": {
+            "name": "Livello"
+          },
+          "levels": {
+            "name": "Livelli"
+          }
+        }
+      },
+      "fire": {
+        "name": "Incendio"
+      },
+      "smoke": {
+        "name": "Fumo"
+      },
+      "flood": {
+        "name": "Allagamento"
+      },
+      "accident": {
+        "name": "Incidente"
+      },
+      "other": {
+        "name": "Altri rischi"
+      },
+      "confidence": {
+        "name": "Affidabilità",
+        "state_attributes": {
+          "max": {
+            "name": "Massimo"
+          }
+        }
+      },
+      "summary": {
+        "name": "Sintesi"
+      },
+      "recommendation": {
+        "name": "Azione consigliata",
+        "state_attributes": {
+          "action_required": {
+            "name": "Azione richiesta"
+          }
+        }
+      },
+      "last_analysis": {
+        "name": "Ultima analisi"
+      },
+      "analysis_duration": {
+        "name": "Durata analisi"
+      },
+      "ai_engine": {
+        "name": "Motore AI"
+      }
+    },
+    "switch": {
+      "monitoring": {
+        "name": "Monitoraggio"
+      }
+    }
+  }
+}

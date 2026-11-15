@@ -1,0 +1,23 @@
+{
+  "domain": "hazard_analysis",
+  "name": "Hazard Analysis",
+  "after_dependencies": [
+    "camera",
+    "notify"
+  ],
+  "codeowners": [
+    "@artech-lab"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "ai_task",
+    "frontend",
+    "http"
+  ],
+  "documentation": "https://github.com/artech-lab/ha-hazard-analysis",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/artech-lab/ha-hazard-analysis/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

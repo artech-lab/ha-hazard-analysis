@@ -1,0 +1,79 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "hazard": {
+        "default": "mdi:shield-check",
+        "state": {
+          "on": "mdi:shield-alert"
+        }
+      },
+      "analyzing": {
+        "default": "mdi:magnify-scan"
+      },
+      "deescalation_pending": {
+        "default": "mdi:trending-down"
+      },
+      "problem": {
+        "default": "mdi:robot-confused-outline"
+      }
+    },
+    "button": {
+      "analyze_now": {
+        "default": "mdi:shield-refresh"
+      }
+    },
+    "sensor": {
+      "risk_level": {
+        "default": "mdi:shield-alert",
+        "state": {
+          "none": "mdi:shield-check",
+          "low": "mdi:shield-half-full",
+          "medium": "mdi:shield-alert-outline",
+          "high": "mdi:shield-alert",
+          "critical": "mdi:alarm-light"
+        }
+      },
+      "fire": {
+        "default": "mdi:fire"
+      },
+      "smoke": {
+        "default": "mdi:smoke"
+      },
+      "flood": {
+        "default": "mdi:home-flood"
+      },
+      "accident": {
+        "default": "mdi:hazard-lights"
+      },
+      "other": {
+        "default": "mdi:alert-circle-outline"
+      },
+      "confidence": {
+        "default": "mdi:eye-check-outline"
+      },
+      "summary": {
+        "default": "mdi:text-box-outline"
+      },
+      "recommendation": {
+        "default": "mdi:lightbulb-on-outline"
+      },
+      "last_analysis": {
+        "default": "mdi:clock-check-outline"
+      },
+      "analysis_duration": {
+        "default": "mdi:timer-outline"
+      },
+      "ai_engine": {
+        "default": "mdi:robot-outline"
+      }
+    },
+    "switch": {
+      "monitoring": {
+        "default": "mdi:cctv",
+        "state": {
+          "off": "mdi:cctv-off"
+        }
+      }
+    }
+  }
+}

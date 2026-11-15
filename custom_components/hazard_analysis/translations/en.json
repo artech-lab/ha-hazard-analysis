@@ -1,0 +1,160 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up a hazard monitor",
+        "description": "Pick the cameras of the area and the AI Task entity that will look at them. The integration does the rest: it analyses the images on a dynamic schedule, scores five hazard categories from 0 to 4 and raises an alert when the risk is high. With a cloud AI provider the camera images leave your network.",
+        "data": {
+          "name": "Name",
+          "cameras": "Cameras",
+          "ai_task_entity": "AI Task entity",
+          "occupancy_entity": "Occupancy sensor (optional)",
+          "area_description": "Area description (optional)"
+        },
+        "data_description": {
+          "name": "Used for the device and as the prefix of the entity IDs.",
+          "cameras": "One to four views of the same area, analysed together.",
+          "ai_task_entity": "An AI Task entity with image support (Ollama, OpenAI, Google Gemini, Anthropic…), configured in its own integration.",
+          "occupancy_entity": "When it turns on, an extra analysis runs; while it is on, the faster schedule applies.",
+          "area_description": "A sentence of context for the AI, for example: electronics lab with soldering stations and a 3D printer."
+        }
+      }
+    },
+    "error": {
+      "camera_count": "Select from one to four cameras."
+    },
+    "abort": {
+      "no_ai_task": "No AI Task entity with image support was found. Set up an AI integration that provides one (for example Ollama, OpenAI, Google Gemini or Anthropic), then add Hazard Analysis again."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Hazard monitor options",
+        "data": {
+          "cameras": "Cameras",
+          "ai_task_entity": "AI Task entity",
+          "fallback_ai_task_entity": "Fallback AI Task entity (optional)",
+          "occupancy_entity": "Occupancy sensor (optional)",
+          "workday_entity": "Working hours entity (optional)",
+          "environment_sensors": "Environment sensors (optional)",
+          "area_description": "Area description (optional)",
+          "notify_services": "Push notification services (optional)",
+          "save_evidence": "Save evidence snapshots"
+        },
+        "data_description": {
+          "cameras": "One to four views of the same area, analysed together.",
+          "ai_task_entity": "An AI Task entity with image support (Ollama, OpenAI, Google Gemini, Anthropic…), configured in its own integration.",
+          "fallback_ai_task_entity": "Used when the main engine is unavailable, fails or does not answer within 3 minutes.",
+          "occupancy_entity": "When it turns on, an extra analysis runs; while it is on, the faster schedule applies.",
+          "workday_entity": "While it is on (e.g. Workday binary sensor or a schedule) the faster schedule applies.",
+          "environment_sensors": "Particulate, CO2, temperature, smoke or leak sensors of the area: given to the AI as corroborating evidence.",
+          "area_description": "A sentence of context for the AI, for example: electronics lab with soldering stations and a 3D printer.",
+          "notify_services": "Besides the persistent notification, send the alerts to these notify services (for example mobile_app_phone).",
+          "save_evidence": "On a high or critical reading, save a snapshot of every camera in the Media folder hazard_analysis (kept 30 days)."
+        }
+      }
+    },
+    "error": {
+      "camera_count": "Select from one to four cameras.",
+      "same_engine": "Pick a different entity from the main one."
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "hazard": {
+        "name": "Hazard"
+      },
+      "analyzing": {
+        "name": "Analysis running"
+      },
+      "deescalation_pending": {
+        "name": "De-escalation pending"
+      },
+      "problem": {
+        "name": "Analysis problem",
+        "state_attributes": {
+          "last_error": {
+            "name": "Last error"
+          },
+          "last_attempt": {
+            "name": "Last attempt"
+          }
+        }
+      }
+    },
+    "button": {
+      "analyze_now": {
+        "name": "Analyze now"
+      }
+    },
+    "sensor": {
+      "risk_level": {
+        "name": "Risk level",
+        "state": {
+          "none": "None",
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High",
+          "critical": "Critical"
+        },
+        "state_attributes": {
+          "level": {
+            "name": "Level"
+          },
+          "levels": {
+            "name": "Levels"
+          }
+        }
+      },
+      "fire": {
+        "name": "Fire"
+      },
+      "smoke": {
+        "name": "Smoke"
+      },
+      "flood": {
+        "name": "Flood"
+      },
+      "accident": {
+        "name": "Accident"
+      },
+      "other": {
+        "name": "Other hazards"
+      },
+      "confidence": {
+        "name": "Confidence",
+        "state_attributes": {
+          "max": {
+            "name": "Maximum"
+          }
+        }
+      },
+      "summary": {
+        "name": "Summary"
+      },
+      "recommendation": {
+        "name": "Recommendation",
+        "state_attributes": {
+          "action_required": {
+            "name": "Action required"
+          }
+        }
+      },
+      "last_analysis": {
+        "name": "Last analysis"
+      },
+      "analysis_duration": {
+        "name": "Analysis duration"
+      },
+      "ai_engine": {
+        "name": "AI engine"
+      }
+    },
+    "switch": {
+      "monitoring": {
+        "name": "Monitoring"
+      }
+    }
+  }
+}

@@ -1,0 +1,39 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you expect and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Hazard Analysis version
+    validations:
+      required: true
+  - type: textarea
+    id: engine
+    attributes:
+      label: AI engine and cameras
+      description: The AI integration and model behind the AI Task entity, and the number and type of cameras. Do not attach camera images of private places.
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Settings → Devices & services → Hazard Analysis → ⋮ → Download diagnostics. Attach the file.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Relevant log lines with `custom_components.hazard_analysis` set to debug.
+      render: text
