@@ -1,0 +1,12 @@
+# Keeps the versions of the GitHub Actions used by the workflows up to date.
+# Python test dependencies are not pinned, so they need no updates.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - "*"
