@@ -197,7 +197,7 @@ scripts/check.sh
 ```
 
 The version lives only in `manifest.json`; pushing a new one to `main` publishes the release once the checks
-pass. See [`CLAUDE.md`](CLAUDE.md) for the layout of the code.
+pass.
 
 ## License
 

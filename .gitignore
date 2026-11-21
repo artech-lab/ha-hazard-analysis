@@ -5,3 +5,9 @@ __pycache__/
 .ruff_cache/
 notes.md
 .DS_Store
+
+# Local maintainer tooling, not part of the published repository
+.claude/
+CLAUDE.md
+scripts/preview.html
+scripts/screenshots.py
