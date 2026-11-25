@@ -22,6 +22,10 @@ CONF_ENV_SENSORS: Final = "environment_sensors"
 CONF_AREA_DESCRIPTION: Final = "area_description"
 CONF_NOTIFY: Final = "notify_services"
 CONF_SAVE_EVIDENCE: Final = "save_evidence"
+CONF_EVIDENCE_RETENTION: Final = "evidence_retention_days"
+CONF_EVIDENCE_PATH: Final = "evidence_path"
+
+CONFIG_VERSION: Final = 2
 
 MAX_CAMERAS: Final = 4
 
@@ -53,7 +57,12 @@ ANALYSIS_TIMEOUT_S: Final = 180
 TASK_NAME: Final = "Hazard analysis"
 
 # ----------------------------------------------------------------- evidence
-EVIDENCE_FOLDER: Final = "hazard_analysis"
-EVIDENCE_DAYS: Final = 30
+# Opt-in and private: outside the media folders and outside "www".
+DEFAULT_SAVE_EVIDENCE: Final = False
+DEFAULT_EVIDENCE_RETENTION: Final = 15  # days
+MIN_EVIDENCE_RETENTION: Final = 1
+MAX_EVIDENCE_RETENTION: Final = 365
+EVIDENCE_FOLDER: Final = ("hazard_analysis", "evidence")  # inside the configuration folder
+LEGACY_EVIDENCE_FOLDER: Final = "hazard_analysis"  # inside the local media folder: only pruned
 
 STORAGE_VERSION: Final = 1

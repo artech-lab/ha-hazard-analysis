@@ -14,7 +14,7 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.loader import async_get_integration
 
-from .const import CARD_FILENAME, CARD_URL, DOMAIN
+from .const import CARD_FILENAME, CARD_URL, CONF_SAVE_EVIDENCE, CONFIG_VERSION, DEFAULT_SAVE_EVIDENCE, DOMAIN
 from .monitor import HazardMonitor
 
 PLATFORMS: list[Platform] = [Platform.BINARY_SENSOR, Platform.BUTTON, Platform.SENSOR, Platform.SWITCH]
@@ -36,6 +36,21 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     card = Path(__file__).parent / "frontend" / CARD_FILENAME
     await hass.http.async_register_static_paths([StaticPathConfig(CARD_URL, str(card), cache_headers=False)])
     add_extra_js_url(hass, f"{CARD_URL}?v={version}")
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: HazardConfigEntry) -> bool:
+    """Migrate an entry created by an older version.
+
+    1 -> 2: evidence snapshots became opt-in. A choice already stored in the
+    options is kept; otherwise the new default applies.
+    """
+    if entry.version > CONFIG_VERSION:
+        return False
+    if entry.version < CONFIG_VERSION:
+        hass.config_entries.async_update_entry(
+            entry, options={CONF_SAVE_EVIDENCE: DEFAULT_SAVE_EVIDENCE, **entry.options}, version=CONFIG_VERSION
+        )
     return True
 
 

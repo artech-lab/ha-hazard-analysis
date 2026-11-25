@@ -9,19 +9,24 @@
           "cameras": "Cameras",
           "ai_task_entity": "AI Task entity",
           "occupancy_entity": "Occupancy sensor (optional)",
-          "area_description": "Area description (optional)"
+          "area_description": "Area description (optional)",
+          "save_evidence": "Save evidence snapshots"
         },
         "data_description": {
           "name": "Used for the device and as the prefix of the entity IDs.",
           "cameras": "One to four views of the same area, analysed together.",
           "ai_task_entity": "An AI Task entity with image support (Ollama, OpenAI, Google Gemini, Anthropic…), configured in its own integration.",
           "occupancy_entity": "When it turns on, an extra analysis runs; while it is on, the faster schedule applies.",
-          "area_description": "A sentence of context for the AI, for example: electronics lab with soldering stations and a 3D printer."
+          "area_description": "A sentence of context for the AI, for example: electronics lab with soldering stations and a 3D printer.",
+          "save_evidence": "Off by default. On a high or critical reading, save a snapshot of every camera in a private folder outside the Media folder."
         }
       }
     },
     "error": {
-      "camera_count": "Select from one to four cameras."
+      "camera_count": "Select from one to four cameras.",
+      "evidence_path_media": "The evidence folder is inside a media folder, which every user can browse. Choose another one.",
+      "evidence_path_www": "The evidence folder is inside www, which is served without login. Choose another one.",
+      "evidence_path_not_writable": "The evidence folder cannot be created or written to."
     },
     "abort": {
       "no_ai_task": "No AI Task entity with image support was found. Set up an AI integration that provides one (for example Ollama, OpenAI, Google Gemini or Anthropic), then add Hazard Analysis again."
@@ -40,7 +45,9 @@
           "environment_sensors": "Environment sensors (optional)",
           "area_description": "Area description (optional)",
           "notify_services": "Push notification services (optional)",
-          "save_evidence": "Save evidence snapshots"
+          "save_evidence": "Save evidence snapshots",
+          "evidence_retention_days": "Evidence retention",
+          "evidence_path": "Evidence folder (optional)"
         },
         "data_description": {
           "cameras": "One to four views of the same area, analysed together.",
@@ -51,13 +58,19 @@
           "environment_sensors": "Particulate, CO2, temperature, smoke or leak sensors of the area: given to the AI as corroborating evidence.",
           "area_description": "A sentence of context for the AI, for example: electronics lab with soldering stations and a 3D printer.",
           "notify_services": "Besides the persistent notification, send the alerts to these notify services (for example mobile_app_phone).",
-          "save_evidence": "On a high or critical reading, save a snapshot of every camera in the Media folder hazard_analysis (kept 30 days)."
+          "save_evidence": "On a high or critical reading, save a snapshot of every camera in a private folder outside the Media folder.",
+          "evidence_retention_days": "Older snapshots are deleted, including those left in the old Media folder. It applies even when saving is off.",
+          "evidence_path": "Absolute path, outside the media folders and www. Empty: hazard_analysis/evidence in the configuration folder. Existing snapshots are not moved."
         }
       }
     },
     "error": {
       "camera_count": "Select from one to four cameras.",
-      "same_engine": "Pick a different entity from the main one."
+      "same_engine": "Pick a different entity from the main one.",
+      "evidence_path_absolute": "Enter an absolute path, starting with /.",
+      "evidence_path_media": "The evidence folder is inside a media folder, which every user can browse. Choose another one.",
+      "evidence_path_www": "The evidence folder is inside www, which is served without login. Choose another one.",
+      "evidence_path_not_writable": "The evidence folder cannot be created or written to."
     }
   },
   "entity": {

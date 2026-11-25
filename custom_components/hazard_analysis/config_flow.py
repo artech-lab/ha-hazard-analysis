@@ -7,7 +7,7 @@ from typing import Any
 
 from homeassistant.components.ai_task import AITaskEntityFeature
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, ConfigFlowResult, OptionsFlow
-from homeassistant.const import ATTR_SUPPORTED_FEATURES, CONF_NAME
+from homeassistant.const import ATTR_SUPPORTED_FEATURES, CONF_NAME, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 import voluptuous as vol
@@ -17,15 +17,23 @@ from .const import (
     CONF_AREA_DESCRIPTION,
     CONF_CAMERAS,
     CONF_ENV_SENSORS,
+    CONF_EVIDENCE_PATH,
+    CONF_EVIDENCE_RETENTION,
     CONF_FALLBACK_AI_TASK,
     CONF_NOTIFY,
     CONF_OCCUPANCY,
     CONF_SAVE_EVIDENCE,
     CONF_WORKDAY,
+    CONFIG_VERSION,
+    DEFAULT_EVIDENCE_RETENTION,
     DEFAULT_NAME,
+    DEFAULT_SAVE_EVIDENCE,
     DOMAIN,
     MAX_CAMERAS,
+    MAX_EVIDENCE_RETENTION,
+    MIN_EVIDENCE_RETENTION,
 )
+from .monitor import check_evidence_dir, default_evidence_dir, public_dirs
 
 OPTIONAL_ENTITIES = (CONF_FALLBACK_AI_TASK, CONF_OCCUPANCY, CONF_WORKDAY)
 
@@ -62,6 +70,11 @@ def _sources(current: dict[str, Any], default_ai_task: str | None) -> dict[Any, 
     }
 
 
+def _save_evidence(current: dict[str, Any]) -> dict[Any, Any]:
+    default = current.get(CONF_SAVE_EVIDENCE, DEFAULT_SAVE_EVIDENCE)
+    return {vol.Required(CONF_SAVE_EVIDENCE, default=default): selector.BooleanSelector()}
+
+
 def _validate(user_input: dict[str, Any]) -> dict[str, str]:
     errors = {}
     if not 1 <= len(user_input.get(CONF_CAMERAS) or []) <= MAX_CAMERAS:
@@ -72,10 +85,20 @@ def _validate(user_input: dict[str, Any]) -> dict[str, str]:
     return errors
 
 
+async def _async_check_evidence(hass: HomeAssistant, user_input: dict[str, Any]) -> str | None:
+    """Check the evidence folder; it is created and written to only when saving is enabled."""
+    save = user_input[CONF_SAVE_EVIDENCE]
+    custom = user_input.get(CONF_EVIDENCE_PATH)
+    if not save and not custom:
+        return None
+    folder = custom or default_evidence_dir(hass)
+    return await hass.async_add_executor_job(check_evidence_dir, folder, public_dirs(hass), save)
+
+
 class HazardAnalysisConfigFlow(ConfigFlow, domain=DOMAIN):
     """Initial setup: cameras and AI Task entity."""
 
-    VERSION = 1
+    VERSION = CONFIG_VERSION
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Single setup form."""
@@ -84,7 +107,11 @@ class HazardAnalysisConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="no_ai_task")
 
         errors: dict[str, str] = {}
-        if user_input is not None and not (errors := _validate(user_input)):
+        if user_input is not None:
+            errors = _validate(user_input)
+            if not errors and (error := await _async_check_evidence(self.hass, user_input)):
+                errors[CONF_SAVE_EVIDENCE] = error  # this form has no path field
+        if user_input is not None and not errors:
             return self.async_create_entry(title=user_input.pop(CONF_NAME), data=user_input)
 
         current = user_input or {}
@@ -92,6 +119,7 @@ class HazardAnalysisConfigFlow(ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_NAME, default=current.get(CONF_NAME, DEFAULT_NAME)): selector.TextSelector(),
                 **_sources(current, engines[0]),
+                **_save_evidence(current),
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
@@ -109,7 +137,13 @@ class HazardAnalysisOptionsFlow(OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Single options form."""
         errors: dict[str, str] = {}
-        if user_input is not None and not (errors := _validate(user_input)):
+        if user_input is not None:
+            user_input[CONF_EVIDENCE_PATH] = user_input.get(CONF_EVIDENCE_PATH, "").strip()
+            user_input[CONF_EVIDENCE_RETENTION] = int(user_input[CONF_EVIDENCE_RETENTION])
+            errors = _validate(user_input)
+            if not errors and (error := await _async_check_evidence(self.hass, user_input)):
+                errors[CONF_EVIDENCE_PATH] = error
+        if user_input is not None and not errors:
             # Optional fields removed in the form must be cleared explicitly.
             for key in OPTIONAL_ENTITIES:
                 user_input.setdefault(key, None)
@@ -143,8 +177,21 @@ class HazardAnalysisOptionsFlow(OptionsFlow):
                         mode=selector.SelectSelectorMode.DROPDOWN,
                     )
                 ),
-                vol.Required(CONF_SAVE_EVIDENCE, default=current.get(CONF_SAVE_EVIDENCE, True)): (
-                    selector.BooleanSelector()
+                **_save_evidence(current),
+                vol.Required(
+                    CONF_EVIDENCE_RETENTION,
+                    default=current.get(CONF_EVIDENCE_RETENTION, DEFAULT_EVIDENCE_RETENTION),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=MIN_EVIDENCE_RETENTION,
+                        max=MAX_EVIDENCE_RETENTION,
+                        step=1,
+                        unit_of_measurement=UnitOfTime.DAYS,
+                        mode=selector.NumberSelectorMode.BOX,
+                    )
+                ),
+                vol.Optional(CONF_EVIDENCE_PATH, description=_suggested(current, CONF_EVIDENCE_PATH)): (
+                    selector.TextSelector()
                 ),
             }
         )

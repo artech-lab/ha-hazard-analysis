@@ -9,19 +9,24 @@
           "cameras": "Telecamere",
           "ai_task_entity": "Entità AI Task",
           "occupancy_entity": "Sensore di presenza (facoltativo)",
-          "area_description": "Descrizione dell'area (facoltativa)"
+          "area_description": "Descrizione dell'area (facoltativa)",
+          "save_evidence": "Salva le istantanee di evidenza"
         },
         "data_description": {
           "name": "Usato per il dispositivo e come prefisso degli ID delle entità.",
           "cameras": "Da una a quattro inquadrature della stessa area, analizzate insieme.",
           "ai_task_entity": "Un'entità AI Task che accetta immagini (Ollama, OpenAI, Google Gemini, Anthropic…), configurata nella sua integrazione.",
           "occupancy_entity": "Quando si attiva parte un'analisi in più; finché è attiva vale la cadenza più rapida.",
-          "area_description": "Una frase di contesto per l'AI, ad esempio: laboratorio di elettronica con stazioni di saldatura e una stampante 3D."
+          "area_description": "Una frase di contesto per l'AI, ad esempio: laboratorio di elettronica con stazioni di saldatura e una stampante 3D.",
+          "save_evidence": "Disattivato di default. Con una lettura alta o critica salva un'istantanea di ogni telecamera in una cartella privata, fuori dalla cartella Media."
         }
       }
     },
     "error": {
-      "camera_count": "Seleziona da una a quattro telecamere."
+      "camera_count": "Seleziona da una a quattro telecamere.",
+      "evidence_path_media": "La cartella delle evidenze si trova in una cartella media, visibile a tutti gli utenti. Scegline un'altra.",
+      "evidence_path_www": "La cartella delle evidenze si trova in www, servita senza login. Scegline un'altra.",
+      "evidence_path_not_writable": "Impossibile creare la cartella delle evidenze o scriverci."
     },
     "abort": {
       "no_ai_task": "Non è stata trovata un'entità AI Task che accetti immagini. Configura un'integrazione AI che la fornisca (ad esempio Ollama, OpenAI, Google Gemini o Anthropic), poi aggiungi di nuovo Hazard Analysis."
@@ -40,7 +45,9 @@
           "environment_sensors": "Sensori ambientali (facoltativi)",
           "area_description": "Descrizione dell'area (facoltativa)",
           "notify_services": "Servizi di notifica push (facoltativi)",
-          "save_evidence": "Salva le istantanee di evidenza"
+          "save_evidence": "Salva le istantanee di evidenza",
+          "evidence_retention_days": "Conservazione delle evidenze",
+          "evidence_path": "Cartella delle evidenze (facoltativa)"
         },
         "data_description": {
           "cameras": "Da una a quattro inquadrature della stessa area, analizzate insieme.",
@@ -51,13 +58,19 @@
           "environment_sensors": "Sensori di particolato, CO2, temperatura, fumo o perdite dell'area: passati all'AI come conferma.",
           "area_description": "Una frase di contesto per l'AI, ad esempio: laboratorio di elettronica con stazioni di saldatura e una stampante 3D.",
           "notify_services": "Oltre alla notifica persistente, invia gli avvisi a questi servizi di notifica (ad esempio mobile_app_telefono).",
-          "save_evidence": "Con una lettura alta o critica salva un'istantanea di ogni telecamera nella cartella Media hazard_analysis (conservate 30 giorni)."
+          "save_evidence": "Con una lettura alta o critica salva un'istantanea di ogni telecamera in una cartella privata, fuori dalla cartella Media.",
+          "evidence_retention_days": "Le istantanee più vecchie vengono eliminate, comprese quelle rimaste nella vecchia cartella Media. Vale anche con il salvataggio disattivato.",
+          "evidence_path": "Percorso assoluto, fuori dalle cartelle media e da www. Vuoto: hazard_analysis/evidence nella cartella di configurazione. Le istantanee già salvate non vengono spostate."
         }
       }
     },
     "error": {
       "camera_count": "Seleziona da una a quattro telecamere.",
-      "same_engine": "Scegli un'entità diversa da quella principale."
+      "same_engine": "Scegli un'entità diversa da quella principale.",
+      "evidence_path_absolute": "Inserisci un percorso assoluto, che inizi con /.",
+      "evidence_path_media": "La cartella delle evidenze si trova in una cartella media, visibile a tutti gli utenti. Scegline un'altra.",
+      "evidence_path_www": "La cartella delle evidenze si trova in www, servita senza login. Scegline un'altra.",
+      "evidence_path_not_writable": "Impossibile creare la cartella delle evidenze o scriverci."
     }
   },
   "entity": {

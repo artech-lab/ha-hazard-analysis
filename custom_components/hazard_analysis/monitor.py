@@ -13,9 +13,12 @@ a restart, and it never needs helpers, templates or automations.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 from datetime import datetime, timedelta
 import logging
 from pathlib import Path
+import re
+import tempfile
 import time
 from typing import Any
 
@@ -51,15 +54,19 @@ from .const import (
     CONF_AREA_DESCRIPTION,
     CONF_CAMERAS,
     CONF_ENV_SENSORS,
+    CONF_EVIDENCE_PATH,
+    CONF_EVIDENCE_RETENTION,
     CONF_FALLBACK_AI_TASK,
     CONF_NOTIFY,
     CONF_OCCUPANCY,
     CONF_SAVE_EVIDENCE,
     CONF_WORKDAY,
+    DEFAULT_EVIDENCE_RETENTION,
+    DEFAULT_SAVE_EVIDENCE,
     DOMAIN,
-    EVIDENCE_DAYS,
     EVIDENCE_FOLDER,
     HAZARDS,
+    LEGACY_EVIDENCE_FOLDER,
     MAX_LEVEL,
     OCCUPANCY_COOLDOWN_MIN,
     STALE_MIN,
@@ -73,6 +80,10 @@ _LOGGER = logging.getLogger(__name__)
 
 TICK = timedelta(minutes=1)
 
+# Evidence file names. The current ones follow a prefix with the entry ID.
+EVIDENCE_NAME = r"\d{8}-\d{6}-(?:high|critical)-camera\d+\.jpg"
+LEGACY_EVIDENCE_NAME = r"\d{8}-\d{6}-(?:high|critical)-[a-z0-9_]+\.jpg"
+
 
 def _iso(value: datetime | None) -> str | None:
     return value.isoformat() if value else None
@@ -80,6 +91,42 @@ def _iso(value: datetime | None) -> str | None:
 
 def _from_iso(value: Any) -> datetime | None:
     return dt_util.parse_datetime(str(value)) if value else None
+
+
+def _legacy_folder_name(entry: ConfigEntry) -> str:
+    return slugify(entry.title) or entry.entry_id
+
+
+def default_evidence_dir(hass: HomeAssistant) -> Path:
+    """Private default folder of the evidence snapshots."""
+    return Path(hass.config.path(*EVIDENCE_FOLDER))
+
+
+def public_dirs(hass: HomeAssistant) -> dict[str, list[str]]:
+    """Folders where evidence is not allowed, by the error they cause."""
+    return {
+        "evidence_path_media": list(hass.config.media_dirs.values()),
+        "evidence_path_www": [hass.config.path("www")],  # served on /local without login
+    }
+
+
+def check_evidence_dir(folder: str | Path, public: dict[str, list[str]], create: bool) -> str | None:
+    """Translation key of what is wrong with a folder (blocking: run it in the executor)."""
+    path = Path(folder)
+    if not path.is_absolute():
+        return "evidence_path_absolute"
+    try:
+        resolved = path.resolve()  # follows links and ".."
+        for error, forbidden in public.items():
+            if any(resolved.is_relative_to(Path(root).resolve()) for root in forbidden):
+                return error
+        if create:
+            path.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryFile(dir=path):
+                pass
+    except (OSError, ValueError, RuntimeError):
+        return "evidence_path_not_writable"
+    return None
 
 
 class HazardMonitor:
@@ -101,7 +148,10 @@ class HazardMonitor:
         self.env_sensors: list[str] = list(conf.get(CONF_ENV_SENSORS) or [])
         self.area_description: str = conf.get(CONF_AREA_DESCRIPTION) or ""
         self.notify_services: list[str] = list(conf.get(CONF_NOTIFY) or [])
-        self.save_evidence: bool = bool(conf.get(CONF_SAVE_EVIDENCE, True))
+        self.save_evidence: bool = bool(conf.get(CONF_SAVE_EVIDENCE, DEFAULT_SAVE_EVIDENCE))
+        self.evidence_days: int = int(conf.get(CONF_EVIDENCE_RETENTION, DEFAULT_EVIDENCE_RETENTION))
+        self.evidence_dir = Path(conf.get(CONF_EVIDENCE_PATH) or default_evidence_dir(hass))
+        self.used_evidence_dirs: set[str] = set()  # still pruned after the path changes
 
         # Latest result
         self.levels: dict[str, int | None] = dict.fromkeys(HAZARDS)
@@ -148,6 +198,7 @@ class HazardMonitor:
         self.last_engine = data.get("last_engine")
         self.alert_state = data.get("alert_state", "clear")
         self.monitoring = bool(data.get("monitoring", True))
+        self.used_evidence_dirs = set(data.get("evidence_dirs") or [])
 
     @callback
     def async_start(self) -> None:
@@ -161,6 +212,7 @@ class HazardMonitor:
     @callback
     def _on_started(self, _hass: HomeAssistant) -> None:
         self._unsubs.append(async_call_later(self.hass, STARTUP_DELAY_S, self._on_tick))
+        self._on_prune()
 
     async def async_stop(self) -> None:
         """Stop listening and save."""
@@ -398,25 +450,42 @@ class HazardMonitor:
     # --------------------------------------------------------------- evidence
 
     @property
-    def evidence_dir(self) -> Path:
-        """Folder of the evidence snapshots (shown in the Media browser)."""
-        media = self.hass.config.media_dirs.get("local") or self.hass.config.path("media")
-        return Path(media) / EVIDENCE_FOLDER / (slugify(self.entry.title) or self.entry.entry_id)
+    def _evidence_prefix(self) -> str:
+        return f"{DOMAIN}-{self.entry.entry_id}-"
 
     async def _async_save_evidence(self, level: int) -> None:
         stamp = dt_util.now().strftime("%Y%m%d-%H%M%S")
-        for entity_id in self.cameras:
+        if str(self.evidence_dir) not in self.used_evidence_dirs:
+            self.used_evidence_dirs.add(str(self.evidence_dir))
+            self._save()
+        for number, entity_id in enumerate(self.cameras, 1):
             try:
                 image = await camera.async_get_image(self.hass, entity_id)
             except HomeAssistantError as err:
                 _LOGGER.warning("Evidence snapshot of %s failed: %s", entity_id, err)
                 continue
-            path = self.evidence_dir / f"{stamp}-{level_name(level)}-{entity_id.split('.', 1)[-1]}.jpg"
-            await self.hass.async_add_executor_job(_write_file, path, image.content)
+            # Generated name only: nothing typed by the user ends up in it.
+            path = self.evidence_dir / f"{self._evidence_prefix}{stamp}-{level_name(level)}-camera{number}.jpg"
+            error = await self.hass.async_add_executor_job(_write_evidence, path, image.content, public_dirs(self.hass))
+            if error:
+                _LOGGER.warning("Evidence snapshot of %s not saved: %s", entity_id, error)
 
     @callback
-    def _on_prune(self, _now: datetime) -> None:
-        self.hass.async_add_executor_job(_prune, self.evidence_dir, EVIDENCE_DAYS)
+    def _on_prune(self, _now: datetime | None = None) -> None:
+        """Delete expired snapshots, also when saving is disabled."""
+        folders = {default_evidence_dir(self.hass), self.evidence_dir, *map(Path, self.used_evidence_dirs)}
+        # Old media folder: every subfolder except the ones that other entries prune.
+        entries = self.hass.config_entries.async_entries(DOMAIN)
+        others = {_legacy_folder_name(entry) for entry in entries} - {_legacy_folder_name(self.entry)}
+        media = self.hass.config.media_dirs.get("local") or self.hass.config.path("media")
+        self.hass.async_add_executor_job(
+            _prune_all,
+            folders,
+            re.compile(re.escape(self._evidence_prefix) + EVIDENCE_NAME),
+            Path(media) / LEGACY_EVIDENCE_FOLDER,
+            others,
+            self.evidence_days,
+        )
 
     # ---------------------------------------------------------------- storage
 
@@ -435,13 +504,15 @@ class HazardMonitor:
             "last_engine": self.last_engine,
             "alert_state": self.alert_state,
             "monitoring": self.monitoring,
+            "evidence_dirs": sorted(self.used_evidence_dirs),
         }
 
     def diagnostics(self) -> dict[str, Any]:
-        """State for the diagnostics download (no images, no texts of the scene)."""
+        """State for the diagnostics download (no images, paths or texts of the scene)."""
         data = self._as_storage()
         data.pop("summary")
         data.pop("recommendation")
+        data.pop("evidence_dirs")
         return {
             **data,
             "version": self.version,
@@ -461,15 +532,42 @@ class HazardMonitor:
         async_dispatcher_send(self.hass, self.signal)
 
 
-def _write_file(path: Path, content: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(content)
+def _write_evidence(path: Path, content: bytes, public: dict[str, list[str]]) -> str | None:
+    """Write a snapshot; return the error instead of raising, so the alert is never lost."""
+    # Checked again at every write: media folders and links can change after the setup.
+    if error := check_evidence_dir(path.parent, public, create=True):
+        return error
+    try:
+        path.write_bytes(content)
+    except OSError as err:
+        return str(err)
+    return None
 
 
-def _prune(folder: Path, days: int) -> None:
-    if not folder.is_dir():
-        return
+def _prune_all(
+    folders: Iterable[Path], name: re.Pattern[str], legacy_root: Path, legacy_skip: set[str], days: int
+) -> None:
+    for folder in folders:
+        _prune(folder, name, days)
+    try:
+        legacy = [path for path in legacy_root.iterdir() if path.name not in legacy_skip and not path.is_symlink()]
+    except OSError:
+        return  # never created
+    for folder in legacy:
+        _prune(folder, re.compile(LEGACY_EVIDENCE_NAME), days)
+
+
+def _prune(folder: Path, name: re.Pattern[str], days: int) -> None:
+    """Delete the files of the integration older than the limit, and nothing else."""
     limit = time.time() - days * 86400
-    for file in folder.glob("*.jpg"):
-        if file.stat().st_mtime < limit:
-            file.unlink(missing_ok=True)
+    try:
+        files = [path for path in folder.iterdir() if name.fullmatch(path.name)] if folder.is_dir() else []
+    except OSError as err:
+        _LOGGER.warning("Evidence cleanup failed: %s", err)
+        return
+    for file in files:
+        try:
+            if file.is_file() and file.stat().st_mtime < limit:
+                file.unlink(missing_ok=True)
+        except OSError as err:
+            _LOGGER.warning("Evidence cleanup failed: %s", err)

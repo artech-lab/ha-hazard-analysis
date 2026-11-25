@@ -38,8 +38,8 @@ One package contains every step:
 - **Dynamic schedule** — the higher the risk, the more often it looks (see [Schedule](#schedule)).
 - **Alerts** — a persistent notification on *high* and *critical*, optional push notifications with the camera
   image, and a "cleared" message when the risk goes back down.
-- **Evidence** — on *high* or *critical* a snapshot of every camera is saved in the Media folder
-  `hazard_analysis`, kept for 30 days.
+- **Evidence (opt-in)** — on *high* or *critical* a snapshot of every camera can be saved in a private folder;
+  off by default (see [Privacy](#privacy)).
 - **Dashboard card** — served and loaded by the integration itself: no dashboard resource to add, and it is
   always the version that matches the integration.
 
@@ -80,6 +80,7 @@ Manual alternative: copy `custom_components/hazard_analysis` into your `custom_c
    | AI Task entity | Pre-filled with the first AI Task entity that accepts images. |
    | Occupancy sensor | Optional. Triggers an extra analysis when the area becomes occupied and enables the faster schedule. |
    | Area description | Optional context for the AI, e.g. *electronics lab with soldering stations and a 3D printer*. |
+   | Save evidence snapshots | Off by default, see [Privacy](#privacy). |
 
 2. In a dashboard: *Add card → Hazard Analysis*. The card finds its entities by itself.
 
@@ -100,7 +101,9 @@ The first analysis runs 30 seconds after setup. Add one entry per area to monito
 | Working hours entity | A Workday binary sensor, a `schedule` or any on/off entity: while on, the faster schedule applies. |
 | Environment sensors | PM10/PM2.5, CO2, CO, VOC, temperature, smoke, gas or leak sensors of the area. They are given to the AI with reference ranges, as corroboration only: a sensor alone never raises a score. |
 | Push notification services | `notify` services that receive the alerts, e.g. `mobile_app_phone`. The image of the first camera is attached. |
-| Save evidence snapshots | On by default. |
+| Save evidence snapshots | Off by default, see [Privacy](#privacy). |
+| Evidence retention | Days before the snapshots are deleted, 1–365 (default 15). |
+| Evidence folder | Optional absolute path; default `/config/hazard_analysis/evidence`. |
 
 ### Card options
 
@@ -177,6 +180,26 @@ corroboration only. Confidence measures how clear the evidence is, not how safe 
 
 > A decision aid, not a certified safety system: it does not replace smoke detectors, gas detectors,
 > emergency procedures or people. AI models can miss hazards and can see hazards that are not there.
+
+## Privacy
+
+- **Default** — evidence snapshots are **off**: no image is written and no folder is created. Turn on
+  *Save evidence snapshots* during setup or in the options to save one image per camera at every *high* or
+  *critical* reading.
+- **Location** — `/config/hazard_analysis/evidence`, outside the Media folder and `www`: the images are not
+  shown in the media browser or the card, not attached to notifications and not served over HTTP. Read them
+  through file access to the configuration folder (for example the Samba or SSH app). They are included in
+  backups of that folder. *Evidence folder* sets another absolute, writable path; paths inside a media folder
+  or `www` are refused.
+- **Retention** — *Evidence retention* (default 15 days, 1–365). Expired snapshots are deleted at startup and
+  once a day, even when saving is off. Only files created by the integration are deleted, recognised by name.
+- **After a change** — changing the folder moves nothing; the snapshots in the previous one still expire.
+  Removing a monitor stops its cleanup: delete its remaining snapshots by hand.
+- **Updating from 1.0** — saving is turned off unless the options had been saved with it on. The images already
+  in the Media folder `hazard_analysis` stay there, visible to every user, until they expire with the new
+  retention; delete them by hand to remove them earlier.
+- **Other images** — push notifications link to the live camera image through the authenticated camera proxy.
+  A cloud AI provider receives the camera images at every analysis (see [Requirements](#requirements)).
 
 ## Troubleshooting
 

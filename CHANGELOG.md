@@ -6,6 +6,26 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-25
+
+### Changed
+
+- **Privacy**: evidence snapshots are now opt-in (off by default). Existing entries keep the choice stored in
+  their options; otherwise saving is turned off.
+- **Privacy**: snapshots are saved in the private folder `/config/hazard_analysis/evidence` instead of the Media
+  folder, which every user can browse. Existing images are not moved.
+- Default retention is 15 days instead of 30. **The images already in the Media folder expire with it: those
+  older than 15 days are deleted at the first start after the update.**
+- The cleanup also runs at startup and when saving is off, and deletes only files created by the integration.
+
+### Added
+
+- Options `evidence_retention_days` (1–365) and `evidence_path` (refused inside a media folder or `www`).
+
+### Fixed
+
+- A snapshot that cannot be written no longer prevents the alert.
+
 ## [1.0.0] - 2026-11-15
 
 First public release.
